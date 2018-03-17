@@ -4,6 +4,7 @@
 
 import socket
 from datetime import datetime
+import signal
 
 serverPort = 12000
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
