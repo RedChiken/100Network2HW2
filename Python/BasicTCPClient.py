@@ -57,7 +57,7 @@ def run_program():
             print("exit program")
         else:
             # error case
-            print("")
+            print("error")
     except KeyboardInterrupt:
         print("bye bye~")
         exit(0)
