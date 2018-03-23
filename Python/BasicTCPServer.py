@@ -31,6 +31,6 @@ while True:
     elif option == "4":
         connectionSocket.send(str(datetime.now()).encode())
     else:
-        print("error")
+        print("Wrong input. Bye bye~")
     connectionSocket.close()
 
