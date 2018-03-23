@@ -1,3 +1,23 @@
 
 Python/\.idea/
 Python/\venv/
+
+C/\.vs/C/v15/
+
+*.sln
+
+*.vcxproj
+
+*.filters
+
+*.user
+
+C/Debug/
+
+C/TCPClient/Debug/
+
+C/TCPServer/Debug/
+
+C/UDPClient/Debug/
+
+C/UDPServer/Debug/

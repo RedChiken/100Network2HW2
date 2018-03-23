@@ -29,4 +29,5 @@ while True:
     elif option == "4":
         serverSocket.sendto(str(datetime.now()).encode(), clientAddress)
     else:
-        print("error")
+        print("Wrong input. Bye bye~")
+    serverSocket.close()

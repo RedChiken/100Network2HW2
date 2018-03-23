@@ -11,7 +11,6 @@ def run_program():
     server_name = 'nsl2.cau.ac.kr'
     localhost = 'localhost'
     server_port = 12000
-
     client_socket = socket(AF_INET, SOCK_DGRAM)
     client_socket.bind(('', 5432))
 
@@ -57,9 +56,12 @@ def run_program():
             print("exit program")
         else:
             # error case
-            print("error")
+            print("Wrong input. Bye bye~")
     except KeyboardInterrupt:
         print("bye bye~")
+        exit(0)
+    except ConnectionResetError:
+        print("Server is not connected")
         exit(0)
     client_socket.close()
     print("%s miliseconds" %((time.time() - start_time) * 1000))
