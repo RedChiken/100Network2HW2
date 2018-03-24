@@ -30,4 +30,3 @@ while True:
         serverSocket.sendto(str(datetime.now()).encode(), clientAddress)
     else:
         print("Wrong input. Bye bye~")
-    serverSocket.close()
