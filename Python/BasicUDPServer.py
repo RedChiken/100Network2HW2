@@ -6,14 +6,18 @@ import socket
 from datetime import datetime
 
 serverPort = 12000
-serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+serverSocket = socket.socket("14.36.239.12", socket.SOCK_DGRAM)
 serverSocket.bind(('', serverPort))
 
 print("The server is ready to receive on port", serverPort)
 
 while True:
-    message, clientAddress = serverSocket.recvfrom(2048)
-    option = message.decode()
+    try:
+        message, clientAddress = serverSocket.recvfrom(2048)
+        option = message.decode()
+    except KeyboardInterrupt:
+        print("Bye bye~")
+        exit(1)
     print('Connection requested from', clientAddress)
     if option == "1":
         message, clientAddress = serverSocket.recvfrom(2048)

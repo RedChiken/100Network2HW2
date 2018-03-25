@@ -13,7 +13,7 @@ def run_program():
     server_port = 12000
     try:
         client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect((localhost, server_port))
+        client_socket.connect(("14.36.239.12", server_port))
 
         print("The client is running on port", client_socket.getsockname()[1])
 

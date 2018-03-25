@@ -14,9 +14,13 @@ serverSocket.listen(1)
 print("The server is ready to receive on port", serverPort)
 
 while True:
-    (connectionSocket, clientAddress) = serverSocket.accept()
-    print('Connection requested from', clientAddress)
-    option = connectionSocket.recv(2048).decode()
+    try:
+        (connectionSocket, clientAddress) = serverSocket.accept()
+        print('Connection requested from', clientAddress)
+        option = connectionSocket.recv(2048).decode()
+    except KeyboardInterrupt:
+        print("Bye bye~")
+        exit(1)
     if option == "1":
         message = connectionSocket.recv(2048)
         modifiedMessage = message.decode().upper()

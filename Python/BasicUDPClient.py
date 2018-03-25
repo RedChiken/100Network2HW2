@@ -11,7 +11,7 @@ def run_program():
     server_name = 'nsl2.cau.ac.kr'
     localhost = 'localhost'
     server_port = 12000
-    client_socket = socket(AF_INET, SOCK_DGRAM)
+    client_socket = socket("14.36.239.12", "SOCK_DGRAM")
     client_socket.bind(('', 5432))
 
     print("The client is running on port", client_socket.getsockname()[1])
