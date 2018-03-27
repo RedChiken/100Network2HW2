@@ -1,4 +1,4 @@
-#
+# 20146561 유재범
 # SimpleEchoTCPClient.py
 #
 
@@ -10,10 +10,10 @@ def run_program():
     start_time = time.time()
     server_name = 'nsl2.cau.ac.kr'
     localhost = 'localhost'
-    server_port = 12000
+    server_port = 26561
     try:
         client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect(("14.36.239.12", server_port))
+        client_socket.connect((server_name, server_port))
 
         print("The client is running on port", client_socket.getsockname()[1])
 

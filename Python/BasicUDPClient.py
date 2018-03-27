@@ -1,4 +1,4 @@
-#
+# 20146561 유재범
 # SimpleEchoUDPClient.py
 #
 
@@ -10,8 +10,8 @@ def run_program():
     start_time = time.time()
     server_name = 'nsl2.cau.ac.kr'
     localhost = 'localhost'
-    server_port = 12000
-    client_socket = socket("14.36.239.12", "SOCK_DGRAM")
+    server_port = 36561
+    client_socket = socket(AF_INET, SOCK_DGRAM)
     client_socket.bind(('', 5432))
 
     print("The client is running on port", client_socket.getsockname()[1])
@@ -24,18 +24,18 @@ def run_program():
           "option 5) exit client program\n")
     try:
         option = input("option : ")
-        client_socket.sendto(option.encode(), (localhost, server_port))
+        client_socket.sendto(option.encode(), (server_name, server_port))
         if option == '1':
             # lowercase to uppercase
             message = input('Input lowercase sentence: ')
-            client_socket.sendto(message.encode(), (localhost, server_port))
+            client_socket.sendto(message.encode(), (server_name, server_port))
             modified_message, server_address = client_socket.recvfrom(2048)
             print('Reply from server:', modified_message.decode())
 
         elif option == '2':
             # uppercase to lowercase
             message = input('Input uppercase sentence: ')
-            client_socket.sendto(message.encode(), (localhost, server_port))
+            client_socket.sendto(message.encode(), (server_name, server_port))
             modified_message, server_address = client_socket.recvfrom(2048)
             print('Reply from server:', modified_message.decode())
 

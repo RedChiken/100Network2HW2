@@ -1,4 +1,4 @@
-#
+#20146561 유재범
 # SimpleEchoTCPServer.py
 #
 
@@ -6,7 +6,7 @@ import socket
 from datetime import datetime
 import signal
 
-serverPort = 12000
+serverPort = 26561
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(1)

@@ -1,12 +1,12 @@
-#
+#20146561 유재범
 # SimpleEchoUDPServer.py
 #
 
 import socket
 from datetime import datetime
 
-serverPort = 12000
-serverSocket = socket.socket("14.36.239.12", socket.SOCK_DGRAM)
+serverPort = 36561
+serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 serverSocket.bind(('', serverPort))
 
 print("The server is ready to receive on port", serverPort)
