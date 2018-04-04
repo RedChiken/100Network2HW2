@@ -13,7 +13,11 @@ class Server(object):
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((self.host, self.port))
+        self.clientNum = 0
+        self.clientSize = 0
         print("The server is opened with ", port)
+
+    lock = threading.Lock()
 
     def listen(self):
         self.sock.listen(5)
@@ -28,18 +32,22 @@ class Server(object):
             exit(1)
 
     def listen_to_client(self, client, address):
+        with self.lock:
+            self.clientNum += 1
+            num = self.clientNum
+            self.clientSize += 1
+            print("Client " + str(num) + " connected. Number of connected clients = " + str(self.clientSize))
         try:
             print("The server is ready to receive on port", address)
-            option = client.recv(2048).decode()
+            input = client.recv(2048).decode()
+            option = input[0]
+            print(option)
             if option == "1":
-                message = client.recv(2048)
-                client.send(message.decode().upper().encode())
+                client.send(input[1:].upper().encode())
             elif option == "2":
-                message = client.recv(2048)
-                client.send(message.decode().lower().encode())
+                client.send(input[1:].lower().encode())
             elif option == "3":
-                client.send(str(socket.gethostbyname(socket.gethostname())).encode())
-                client.send(str(self.port).encode())
+                client.send((str(socket.gethostbyname(socket.gethostname())) + " " + str(self.port)).encode())
             elif option == "4":
                 client.send(str(datetime.now()).encode())
             else:
@@ -49,6 +57,9 @@ class Server(object):
             exit(1)
         except ConnectionError:
             print("Client disconnect impolitely")
+        with self.lock:
+            self.clientSize -= 1
+            print("Client " + str(num) + " disConnected. Number of connected clients = " + str(self.clientSize))
 
 
 if __name__ == "__main__":

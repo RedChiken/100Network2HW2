@@ -17,21 +17,18 @@ while True:
     try:
         (connectionSocket, clientAddress) = serverSocket.accept()
         print('Connection requested from', clientAddress)
-        option = connectionSocket.recv(2048).decode()
+        input = connectionSocket.recv(2048).decode()
+        option = input[0]
+        print(option)
     except KeyboardInterrupt:
         print("Bye bye~")
         exit(1)
     if option == "1":
-        message = connectionSocket.recv(2048)
-        modifiedMessage = message.decode().upper()
-        connectionSocket.send(modifiedMessage.encode())
+        connectionSocket.send(input[1:].upper().encode())
     elif option == "2":
-        message = connectionSocket.recv(2048)
-        modifiedMessage = message.decode().lower()
-        connectionSocket.send(modifiedMessage.encode())
+        connectionSocket.send(input[1:].lower().encode())
     elif option == "3":
-        connectionSocket.send(str(socket.gethostbyname(socket.gethostname())).encode())
-        connectionSocket.send(str(serverPort).encode())
+        connectionSocket.send((str(socket.gethostbyname(socket.gethostname())) + " " + str(serverPort)).encode())
     elif option == "4":
         connectionSocket.send(str(datetime.now()).encode())
     else:

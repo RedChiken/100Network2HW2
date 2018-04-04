@@ -7,7 +7,6 @@ import time
 
 
 def run_program():
-    start_time = time.time()
     server_name = 'nsl2.cau.ac.kr'
     localhost = 'localhost'
     server_port = 26561
@@ -24,40 +23,17 @@ def run_program():
           "option 5) exit client program\n")
     try:
         option = input("option : ")
-        client_socket.send(option.encode())
         if option == '1':
-            # lowercase to uppercase
-            message = input('Input lowercase sentence: ')
-            client_socket.send(message.encode())
-            modified_message = client_socket.recv(2048)
-            print('Reply from server:', modified_message.decode())
-
+            option += input('Input lowercase sentence: ')
         elif option == '2':
-            # uppercase to lowercase
-            message = input('Input uppercase sentence: ')
-            client_socket.send(message.encode())
-            modified_message = client_socket.recv(2048)
-            print('Reply from server:', modified_message.decode())
-
-        elif option == '3':
-            # get server's ip and port number
-            modified_message = client_socket.recv(2048)
-            print('Reply from server:', modified_message.decode())
-            modified_message = client_socket.recv(2048)
-            print('Reply from server:', modified_message.decode())
-
-        elif option == '4':
-            # get server's time
-            modified_message = client_socket.recv(2048)
-            print('Reply from server:', modified_message.decode())
-
+            option += input('Input uppercase sentence: ')
         elif option == '5':
-            # exit
             print("exit program")
-
-        else:
-            # error case
-            print("Wrong input. Bye bye~")
+        start_time = time.time()
+        if option < '5':
+            client_socket.send(option.encode())
+            modified_message = client_socket.recv(2048)
+            print('Reply from server: ', modified_message.decode())
     except KeyboardInterrupt:
         print("bye bye~")
         exit(0)
