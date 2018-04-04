@@ -19,7 +19,6 @@ while True:
         print('Connection requested from', clientAddress)
         input = connectionSocket.recv(2048).decode()
         option = input[0]
-        print(option)
     except KeyboardInterrupt:
         print("Bye bye~")
         exit(1)

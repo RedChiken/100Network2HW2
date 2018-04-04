@@ -41,7 +41,6 @@ class Server(object):
             print("The server is ready to receive on port", address)
             input = client.recv(2048).decode()
             option = input[0]
-            print(option)
             if option == "1":
                 client.send(input[1:].upper().encode())
             elif option == "2":
