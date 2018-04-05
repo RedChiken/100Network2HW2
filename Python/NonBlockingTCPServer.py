@@ -30,13 +30,13 @@ while True:
                 (connectionSocket, clientAddress) = s.accept()
                 clientNum += 1
                 connectingClient += 1
-                clientNumDic[connectionSocket] = clientNum
-                #이 값을 어떻게 해야 할까? 마지막 값으로 계속 들어가는데
-                print("Client " + str(clientNumDic[connectionSocket])
-                      + " connected. Number of connected clients = " + str(connectingClient))
                 connectionSocket.setblocking(0)
                 inputs.append(connectionSocket)
                 message_queues[connectionSocket] = queue.Queue()
+                clientNumDic[clientAddress] = clientNum
+                #이 값을 어떻게 해야 할까? 마지막 값으로 계속 들어가는데
+                print("Client " + str(clientNumDic[clientAddress])
+                      + " connected. Number of connected clients = " + str(connectingClient))
             except InterruptedError:
                 #다른 에러 확인 필요
                 print("socket is not created")
@@ -62,13 +62,13 @@ while True:
                     if s not in outputs:
                         outputs.append(s)
                 else:
+                    connectingClient -= 1
+                    print("Client " + str(clientNumDic[clientAddress])
+                          + " disconnected. number of connected clients = " + str(connectingClient))
                     if s in outputs:
                         outputs.remove(s)
                     inputs.remove(s)
                     s.close()
-                    connectingClient -= 1
-                    print("Client " + str(clientNumDic[connectionSocket])
-                          + " disconnected. number of connected clients = " + str(connectingClient))
                     del message_queues[s]
             except KeyboardInterrupt:
                 print("Bye bye~")
@@ -76,6 +76,12 @@ while True:
             except EOFError:
                 print("Bye bye~")
                 exit(1)
+            except ConnectionResetError:
+                print("Client disconnect Impolitely")
+                inputs.remove(s)
+                if s in outputs:
+                    outputs.remove(s)
+                connectingClient -= 1
 
     for s in writable:
         try:

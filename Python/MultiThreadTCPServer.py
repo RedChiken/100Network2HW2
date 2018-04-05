@@ -37,28 +37,36 @@ class Server(object):
             num = self.clientNum
             self.clientSize += 1
             print("Client " + str(num) + " connected. Number of connected clients = " + str(self.clientSize))
-        try:
             print("The server is ready to receive on port", address)
-            input = client.recv(2048).decode()
-            option = input[0]
-            if option == "1":
-                client.send(input[1:].upper().encode())
-            elif option == "2":
-                client.send(input[1:].lower().encode())
-            elif option == "3":
-                client.send((str(socket.gethostbyname(socket.gethostname())) + " " + str(self.port)).encode())
-            elif option == "4":
-                client.send(str(datetime.now()).encode())
-            else:
-                print("Wrong input. Bye bye~")
-        except KeyboardInterrupt:
-            print("Bye bye~")
-            exit(1)
-        except ConnectionError:
-            print("Client disconnect impolitely")
-        except EOFError:
-            print("Bye bye~")
-            exit(1)
+        while True:
+            try:
+                clientinput = client.recv(2048).decode()
+                print(clientinput)
+                option = clientinput[0]
+                if option == "1":
+                    client.send(clientinput[1:].upper().encode())
+                elif option == "2":
+                    client.send(clientinput[1:].lower().encode())
+                elif option == "3":
+                    client.send((str(socket.gethostbyname(socket.gethostname())) + " " + str(self.port)).encode())
+                elif option == "4":
+                    client.send(str(datetime.now()).encode())
+                elif option == "5":
+                    print("Bye~ bye")
+                    break
+                else:
+                    print("Wrong input. Bye bye~")
+            except KeyboardInterrupt:
+                print("Bye bye~")
+                # exit(1)
+                break
+            except ConnectionError:
+                print("Client disconnect impolitely")
+                break
+            except EOFError:
+                print("Bye bye~")
+                #exit(1)
+                break
         with self.lock:
             self.clientSize -= 1
             print("Client " + str(num) + " disConnected. Number of connected clients = " + str(self.clientSize))
