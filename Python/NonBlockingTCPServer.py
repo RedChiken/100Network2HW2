@@ -18,9 +18,12 @@ clientNum = 0
 clientNumDic = {}
 connectingClient = 0
 print("The server is ready to receive on port", serverPort)
-
 while True:
-    readable, writable, exceptional = select.select(inputs, outputs, inputs)
+    try:
+        readable, writable, exceptional = select.select(inputs, outputs, inputs)
+    except KeyboardInterrupt:
+        print("Bye bye")
+        break;
     for s in readable:
         if s is serverSocket:
             try:
@@ -29,7 +32,8 @@ while True:
                 connectingClient += 1
                 clientNumDic[connectionSocket] = clientNum
                 #이 값을 어떻게 해야 할까? 마지막 값으로 계속 들어가는데
-                print("Client " + str(clientNumDic[connectionSocket]) + " connected. Number of connected clients = " + str(connectingClient))
+                print("Client " + str(clientNumDic[connectionSocket])
+                      + " connected. Number of connected clients = " + str(connectingClient))
                 connectionSocket.setblocking(0)
                 inputs.append(connectionSocket)
                 message_queues[connectionSocket] = queue.Queue()
@@ -37,6 +41,9 @@ while True:
                 #다른 에러 확인 필요
                 print("socket is not created")
                 exit(1)
+            except ConnectionError:
+                print("client disconnect impolitely")
+                s.close()
         else:
             try:
                 clientinput= s.recv(2048).decode()
@@ -47,7 +54,8 @@ while True:
                     elif option == "2":
                         message_queues[s].put(clientinput[1:].lower().encode())
                     elif option == "3":
-                        message_queues[s].put(str((socket.gethostbyname(socket.gethostname())) + " " + str(serverPort)).encode())
+                        message_queues[s].put(str((socket.gethostbyname(socket.gethostname()))
+                                                  + " " + str(serverPort)).encode())
                     elif option == "4":
                         message_queues[s].put(str(datetime.now()).encode())
                     # message_queues[s].put(input)
@@ -59,9 +67,13 @@ while True:
                     inputs.remove(s)
                     s.close()
                     connectingClient -= 1
-                    print("Client " + str(clientNumDic[connectionSocket]) + " disconnected. number of connected clients = " + str(connectingClient))
+                    print("Client " + str(clientNumDic[connectionSocket])
+                          + " disconnected. number of connected clients = " + str(connectingClient))
                     del message_queues[s]
             except KeyboardInterrupt:
+                print("Bye bye~")
+                exit(1)
+            except EOFError:
                 print("Bye bye~")
                 exit(1)
 

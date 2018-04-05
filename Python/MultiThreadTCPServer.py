@@ -56,6 +56,9 @@ class Server(object):
             exit(1)
         except ConnectionError:
             print("Client disconnect impolitely")
+        except EOFError:
+            print("Bye bye~")
+            exit(1)
         with self.lock:
             self.clientSize -= 1
             print("Client " + str(num) + " disConnected. Number of connected clients = " + str(self.clientSize))

@@ -21,6 +21,7 @@ def run_program():
           "option 3) ask the server what is the IP address and port number of the client\n"
           "option 4) ask the server what the current time on the server is\n"
           "option 5) exit client program\n")
+    start_time = time.time()
     try:
         option = input("option : ")
         if option == '1':
@@ -29,17 +30,16 @@ def run_program():
             option += input('Input uppercase sentence: ')
         elif option == '5':
             print("exit program")
-        start_time = time.time()
         if option < '5':
             client_socket.send(option.encode())
             modified_message = client_socket.recv(2048)
             print('Reply from server: ', modified_message.decode())
     except KeyboardInterrupt:
         print("bye bye~")
-        exit(0)
     except ConnectionRefusedError:
         print("Server is not ready yet. Wait until server ")
-        exit(0)
+    except ConnectionError:
+        print("Server disconnect suddenly")
     client_socket.close()
     print("%s miliseconds" %((time.time() - start_time) * 1000))
 
