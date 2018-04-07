@@ -41,7 +41,6 @@ class Server(object):
         while True:
             try:
                 clientinput = client.recv(2048).decode()
-                print(clientinput)
                 option = clientinput[0]
                 if option == "1":
                     client.send(clientinput[1:].upper().encode())
@@ -52,7 +51,6 @@ class Server(object):
                 elif option == "4":
                     client.send(str(datetime.now()).encode())
                 elif option == "5":
-                    print("Bye~ bye")
                     break
                 else:
                     print("Wrong input. Bye bye~")

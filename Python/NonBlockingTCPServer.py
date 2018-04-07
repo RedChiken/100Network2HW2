@@ -33,9 +33,9 @@ while True:
                 connectionSocket.setblocking(0)
                 inputs.append(connectionSocket)
                 message_queues[connectionSocket] = queue.Queue()
-                clientNumDic[clientAddress] = clientNum
+                clientNumDic[connectionSocket] = clientNum
                 #이 값을 어떻게 해야 할까? 마지막 값으로 계속 들어가는데
-                print("Client " + str(clientNumDic[clientAddress])
+                print("Client " + str(clientNumDic[connectionSocket])
                       + " connected. Number of connected clients = " + str(connectingClient))
             except InterruptedError:
                 #다른 에러 확인 필요
@@ -63,13 +63,13 @@ while True:
                         outputs.append(s)
                 else:
                     connectingClient -= 1
-                    print("Client " + str(clientNumDic[clientAddress])
+                    print("Client " + str(clientNumDic[connectionSocket])
                           + " disconnected. number of connected clients = " + str(connectingClient))
-                    if s in outputs:
-                        outputs.remove(s)
+                    # if s in outputs:
+                    #     outputs.remove(s)
                     inputs.remove(s)
-                    s.close()
-                    del message_queues[s]
+                    # s.close()
+                    # del message_queues[s]
             except KeyboardInterrupt:
                 print("Bye bye~")
                 exit(1)
