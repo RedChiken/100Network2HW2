@@ -63,7 +63,7 @@ while True:
                         outputs.append(s)
                 else:
                     connectingClient -= 1
-                    print("Client " + str(clientNumDic[connectionSocket])
+                    print("Client " + str(clientNumDic[s])
                           + " disconnected. number of connected clients = " + str(connectingClient))
                     # if s in outputs:
                     #     outputs.remove(s)
