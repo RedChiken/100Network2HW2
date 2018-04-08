@@ -34,11 +34,9 @@ while True:
                 inputs.append(connectionSocket)
                 message_queues[connectionSocket] = queue.Queue()
                 clientNumDic[connectionSocket] = clientNum
-                #이 값을 어떻게 해야 할까? 마지막 값으로 계속 들어가는데
                 print("Client " + str(clientNumDic[connectionSocket])
                       + " connected. Number of connected clients = " + str(connectingClient))
             except InterruptedError:
-                #다른 에러 확인 필요
                 print("socket is not created")
                 exit(1)
             except ConnectionError:
@@ -54,22 +52,16 @@ while True:
                     elif option == "2":
                         message_queues[s].put(clientinput[1:].lower().encode())
                     elif option == "3":
-                        message_queues[s].put(str((socket.gethostbyname(socket.gethostname()))
-                                                  + " " + str(serverPort)).encode())
+                        message_queues[s].put(str(s.getpeername()).encode())
                     elif option == "4":
                         message_queues[s].put(str(datetime.now()).encode())
-                    # message_queues[s].put(input)
                     if s not in outputs:
                         outputs.append(s)
                 else:
                     connectingClient -= 1
                     print("Client " + str(clientNumDic[s])
                           + " disconnected. number of connected clients = " + str(connectingClient))
-                    # if s in outputs:
-                    #     outputs.remove(s)
                     inputs.remove(s)
-                    # s.close()
-                    # del message_queues[s]
             except KeyboardInterrupt:
                 print("Bye bye~")
                 exit(1)

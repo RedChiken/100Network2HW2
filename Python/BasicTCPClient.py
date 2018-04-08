@@ -12,7 +12,7 @@ def run_program():
     server_port = 26561
     client_socket = socket(AF_INET, SOCK_STREAM)
     try:
-        client_socket.connect((localhost, server_port))
+        client_socket.connect((server_name, server_port))
     except ConnectionRefusedError:
         print("Server denied to connect.")
         exit(1)
@@ -48,5 +48,4 @@ def run_program():
 
 
 if __name__ == '__main__':
-    # signal.signal(signal.SIGINT, handler)
     run_program()
