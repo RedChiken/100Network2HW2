@@ -25,7 +25,8 @@ class OmokServer(object):
             while True:
                 client, address = self.sock.accept()
                 client.settimeout(1000)
-                t: Thread = threading.Thread(target=self.omok_client_socket, args=(client, address, self.nickname, self.isOmok))
+                t: Thread = threading.Thread(target=self.omok_client_socket,
+                                             args=(client, address, self.nickname, self.isOmok))
                 self.clientlist.append(client)
                 self.isOmok[t] = False
                 t.start()
@@ -51,12 +52,39 @@ class OmokServer(object):
                 print("client disconnect brutally")
                 break
 
-    def protocol(self, speaker, clientinput):
+    def protocol(self, speaker, input_message):
+        if input_message[0] == '\\':
+            print("input inst")
+            split_message = input_message.split()
+            inst = split_message[0]
+            if self.isOmok[speaker]:
+                if inst == "\\ss":
+                    print("move omok")
+                elif inst == "\\gg":
+                    print("gg")
+            if inst == "\\list":
+                print("print nickname, ip, port list of all users")
+            elif inst == "\\w":
+                print("whisper")
+            elif inst == "\\quit":
+                print("quit program")
+            elif inst == "\\play":
+                print("suggest player to play omok")
+            else:
+                print("wrong input. deny it.")
+        else:
+            self.broadcast(speaker, input_message)
+
+    def broadcast(self, speaker, input_message):
         for client in self.clientlist:
             if speaker != client:
                 with self.lock:
-                    client.send((self.nickname[speaker] + str(">") + clientinput).encode())
-                    
+                    client.send((self.nickname[speaker] + str(" > ") + input_message).encode())
+
+    def whisper(self, speaker, listener, clientinput):
+        with self.lock:
+            listener.send((self.nickname[speaker] + str(" > ") + clientinput).encode())
+
 
 if __name__ == "__main__":
     try:
