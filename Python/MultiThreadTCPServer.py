@@ -47,7 +47,6 @@ class Server(object):
                     client.send(clientinput[1:].lower().encode())
                 elif option == "3":
                     client.send(str(client.getpeername()).encode())
-                    # client.send((str(socket.gethostbyname(socket.gethostname())) + " " + str(self.port)).encode())
                 elif option == "4":
                     client.send(str(datetime.now()).encode())
                 elif option == "5":
