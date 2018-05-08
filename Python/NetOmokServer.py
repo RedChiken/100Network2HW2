@@ -12,9 +12,12 @@ class OmokServer(object):
         self.sock.bind((' ', self.port))
         # get client socket and return nickname
         self.clientlist = []
+        self.omokPlayer = []
         self.nickname = {}
         # check client is on omok game or not
         self.isOmok = {}
+        self.omokPending = False
+        self.turn = 0
         print("The server is opened with ", port)
 
     lock = threading.Lock()
@@ -53,15 +56,25 @@ class OmokServer(object):
                 break
 
     def protocol(self, speaker, input_message):
+        split_message = input_message.split()
         if input_message[0] == '\\':
             print("input inst")
-            split_message = input_message.split()
             inst = split_message[0]
             if self.isOmok[speaker]:
                 if inst == "\\ss":
-                    print("move omok")
+                    if self.omokPlayer[self.turn % 2] == speaker:
+                        self.turn += 1
+                        self.announce("temp", self.omokPlayer[self.turn % 2], "now your turn")
+                    else:
+                        self.announce("temp", self.omokPlayer[self.turn % 2], "not your turn")
                 elif inst == "\\gg":
                     print("gg")
+                    self.announce("game end", speaker, "you lose")
+                    self.announce("game end", self.omokPlayer[(self.turn + 1) % 2], "you win")
+                    for player in self.omokPlayer:
+                        self.isOmok[player] = False
+                        self.omokPlayer = []
+                        self.turn = 0
             if inst == "\\list":
                 print("print nickname, ip, port list of all users")
                 for participants in self.clientlist:
@@ -81,11 +94,27 @@ class OmokServer(object):
                 print("quit program")
             elif inst == "\\play":
                 print("suggest player to play omok")
-            else:
-                # print("wrong input. deny it.")
-                self.announce("Inst not Defined", speaker, "You write wrong inst")
+                listener = split_message[1]
+                self.announce("Suggest", self.clientlist[list(self.nickname.values()).index(listener)], self.nickname[speaker] + "wants to play with you. agree? [y/n] : ")
+                self.omokPlayer.append(speaker)
+                self.omokPending = True
         else:
-            self.broadcast(speaker, input_message)
+            if self.omokPending:
+                if input_message == "y":
+                    self.omokPlayer.append(speaker)
+                    for player in self.omokPlayer:
+                        self.isOmok[player] = True
+                    self.omokPending = False
+                    self.announce("omok", self.omokPlayer[0],
+                                  "game started. " + self.nickname[self.omokPlayer[0]] + " plays first.")
+                    self.announce("temp", self.omokPlayer[0], "omok map")
+                else:
+                    self.omokPending = False
+                    self.announce("game denied", self.omokPlayer[0], self.nickname[speaker] + " deny to play game")
+                    self.omokPlayer = []
+
+            else:
+                self.broadcast(speaker, input_message)
 
     def broadcast(self, speaker, input_message):
         for client in self.clientlist:
