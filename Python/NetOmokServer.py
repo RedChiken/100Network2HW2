@@ -62,27 +62,28 @@ class OmokServer(object):
                     print("move omok")
                 elif inst == "\\gg":
                     print("gg")
+            if inst == "\\list":
+                print("print nickname, ip, port list of all users")
+                for participants in self.clientlist:
+                    self.announce("Info", speaker, self.nickname[participants] + " " + str(participants.getpeername()))
+            elif inst == "\\w":
+                input_message = input_message.replace(inst, "")
+                input_message = input_message.strip()
+                split_message = input_message.split()
+                listener = split_message[0]
+                input_message = input_message.replace(listener, "");
+                input_message = input_message.strip()
+                try:
+                    self.whisper(speaker, self.clientlist[list(self.nickname.values()).index(listener)], input_message)
+                except ValueError:
+                    self.announce("Error", speaker, "There is no " + listener + " in this chat group.")
+            elif inst == "\\quit":
+                print("quit program")
+            elif inst == "\\play":
+                print("suggest player to play omok")
             else:
-                if inst == "\\list":
-                    print("print nickname, ip, port list of all users")
-                elif inst == "\\w":
-                    print("whisper")
-                    input_message = input_message.replace(inst, "")
-                    input_message = input_message.strip()
-                    split_message = input_message.split()
-                    listener = split_message[0]
-                    input_message = input_message.replace(listener, "");
-                    input_message = input_message.strip()
-                    try:
-                        self.whisper(speaker, self.clientlist[list(self.nickname.values()).index(listener)], input_message)
-                    except ValueError:
-                        self.announce("Error", speaker, "There is no " + listener + " in this chat group.")
-                elif inst == "\\quit":
-                    print("quit program")
-                elif inst == "\\play":
-                    print("suggest player to play omok")
-                else:
-                    print("wrong input. deny it.")
+                # print("wrong input. deny it.")
+                self.announce("Inst not Defined", speaker, "You write wrong inst")
         else:
             self.broadcast(speaker, input_message)
 
