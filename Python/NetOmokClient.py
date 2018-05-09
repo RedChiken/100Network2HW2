@@ -1,7 +1,7 @@
 import socket
 import time
 import threading
-
+import json
 
 class Client(object):
     def __init__(self):
@@ -11,7 +11,7 @@ class Client(object):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.context = ''
         self.onTimer = False
-        self.answer = False
+        self.answer = True
 
     lock = threading.Lock()
 
@@ -34,8 +34,6 @@ class Client(object):
         while True:
             context = input()
             client_socket.send(context.encode())
-            if self.onTimer:
-                self.answer = True
 
     def receive(self, client_socket, context):
         while True:
@@ -46,13 +44,57 @@ class Client(object):
                 threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
             elif inst == "game end":
                 self.onTimer = False
-            print(str(context))
+            if inst == "map":
+                self.print_board(json.loads(str(context).split(" > ")[1]).get("board"),
+                                 json.loads(str(context).split(" > ")[1]).get("row"),
+                                 json.loads(str(context).split(" > ")[1]).get("col"))
+            elif inst == "game start0":
+                self.onTimer = True
+                self.answer = False
+                threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
+            elif inst == "game start1":
+                self.answer = True
+            elif inst == "valid":
+                with self.lock:
+                    self.answer = True
+            elif inst == "deny":
+                self.answer = False
+            else:
+                print(str(context))
 
     def stopwatch(self, client_socket, limit):
         time.sleep(limit)
         if not self.answer:
-            print("n")
             client_socket.send(str("n").encode())
+            self.answer = True
+            #i think this function has problem
+
+    def print_board(self, board, row, col):
+        print("   ", end="")
+        for j in range(0, col):
+            print("%2d" % j, end="")
+        print()
+        print("  ", end="")
+        for j in range(0, 2 * col + 3):
+            print("-", end="")
+        print()
+        for i in range(0, row):
+            print("%d |" % i, end="")
+            for j in range(0, col):
+                c = board[i][j]
+                if c == 0:
+                    print(" +", end="")
+                elif c == 1:
+                    print(" 0", end="")
+                elif c == 2:
+                    print(" @", end="")
+                else:
+                    print("ERROR", end="")
+            print(" |")
+        print("  ", end="")
+        for j in range(0, 2 * col + 3):
+            print("-", end="")
+        print()
 
 
 if __name__ == '__main__':

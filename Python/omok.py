@@ -7,6 +7,7 @@ import time
 ROW = 10
 COL = 10
 
+
 def print_board(b):
 
     print("   ", end="")
