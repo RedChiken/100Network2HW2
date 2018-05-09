@@ -64,9 +64,9 @@ class OmokServer(object):
                 if inst == "\\ss":
                     if self.omokPlayer[self.turn % 2] == speaker:
                         self.turn += 1
-                        self.announce("temp", self.omokPlayer[self.turn % 2], "now your turn")
+                        self.announce("Turn", self.omokPlayer[self.turn % 2], "now your turn")
                     else:
-                        self.announce("temp", self.omokPlayer[self.turn % 2], "not your turn")
+                        self.announce("Turn", self.omokPlayer[self.turn % 2], "not your turn")
                 elif inst == "\\gg":
                     print("gg")
                     self.announce("game end", speaker, "you lose")
@@ -95,7 +95,8 @@ class OmokServer(object):
             elif inst == "\\play":
                 print("suggest player to play omok")
                 listener = split_message[1]
-                self.announce("Suggest", self.clientlist[list(self.nickname.values()).index(listener)], self.nickname[speaker] + "wants to play with you. agree? [y/n] : ")
+                self.announce("Suggest", self.clientlist[list(self.nickname.values()).index(listener)],
+                              self.nickname[speaker] + " wants to play with you. agree? [y/n]")
                 self.omokPlayer.append(speaker)
                 self.omokPending = True
         else:

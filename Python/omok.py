@@ -39,6 +39,7 @@ def print_board(b):
     
     print()
 
+
 def check_win(b, x, y):
     last_stone = b[x][y]
     start_x, start_y, end_x, end_y = x, y, x, y
@@ -92,6 +93,7 @@ def check_win(b, x, y):
     
     return 0
 
+
 def main():
     board = [[0 for row in range(ROW)] for col in range(COL)]
     x, y, turn, count, win = None, None, 0, 0, 0
@@ -130,6 +132,7 @@ def main():
         turn = (turn + 1) % 2
     
     return 0
+
 
 if __name__ == "__main__":
     main()

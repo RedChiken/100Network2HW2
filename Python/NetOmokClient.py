@@ -10,6 +10,8 @@ class Client(object):
         self.server_port = 26561
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.context = ''
+        self.onTimer = False
+        self.answer = False
 
     lock = threading.Lock()
 
@@ -32,11 +34,25 @@ class Client(object):
         while True:
             context = input()
             client_socket.send(context.encode())
+            if self.onTimer:
+                self.answer = True
 
     def receive(self, client_socket, context):
         while True:
             context = client_socket.recv(2048).decode()
+            inst = str(context).split(" > ")[0]
+            if inst == "Suggest" or inst == "Turn":
+                self.answer = False
+                threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
+            elif inst == "game end":
+                self.onTimer = False
             print(str(context))
+
+    def stopwatch(self, client_socket, limit):
+        time.sleep(limit)
+        if not self.answer:
+            print("n")
+            client_socket.send(str("n").encode())
 
 
 if __name__ == '__main__':
