@@ -1,5 +1,4 @@
 import socket
-import datetime
 import threading
 from threading import Thread
 
@@ -29,20 +28,20 @@ class OmokServer(object):
                 client, address = self.sock.accept()
                 client.settimeout(1000)
                 t: Thread = threading.Thread(target=self.omok_client_socket,
-                                             args=(client, address, self.nickname, self.isOmok))
-                self.clientlist.append(client)
-                self.isOmok[client] = False
+                                             args=(client, address))
                 t.start()
         except KeyboardInterrupt:
             print("Bye bye~")
             exit(1)
 
-    def omok_client_socket(self, client, address, nickname, omok):
+    def omok_client_socket(self, client, address):
         client.send(str("Please write your NIckname : ").encode())
         thread_nickname = client.recv(2048).decode()
-        print("nickname : " + str(thread_nickname))
         with self.lock:
-            nickname[client] = thread_nickname
+            self.nickname[client] = thread_nickname
+            self.clientlist.append(client)
+            self.isOmok[client] = False
+        print(str(thread_nickname) + "is connected" + str(address))
         while True:
             try:
                 clientinput = client.recv(2048).decode()
@@ -58,7 +57,6 @@ class OmokServer(object):
     def protocol(self, speaker, input_message):
         split_message = input_message.split()
         if input_message[0] == '\\':
-            print("input inst")
             inst = split_message[0]
             if self.isOmok[speaker]:
                 if inst == "\\ss":
