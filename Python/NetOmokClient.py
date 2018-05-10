@@ -22,13 +22,21 @@ class Client(object):
             print("server denied to connect.")
             exit(1)
         nickname = input(self.client_socket.recv(2048).decode())
-        self.client_socket.send(nickname.encode())
+        try:
+            self.client_socket.send(nickname.encode())
 
-        receive_thread = threading.Thread(target=self.receive, args=(self.client_socket, self.context))
-        receive_thread.start()
+            receive_thread = threading.Thread(target=self.receive, args=(self.client_socket, self.context))
+            receive_thread.start()
 
-        send_thread = threading.Thread(target=self.send, args=(self.client_socket, self.context))
-        send_thread.start()
+            send_thread = threading.Thread(target=self.send, args=(self.client_socket, self.context))
+            send_thread.start()
+
+            receive_thread.join()
+            send_thread.join()
+        except ConnectionResetError:
+            print("Server disconnected")
+            #1. 서버에게 죽은 거 날리기. 서버는 이를 받고 쓰레드 삭제. 게임 중일 경우 gg.
+            #2. threads 죽이기.
 
     def send(self, client_socket, context):
         while True:
@@ -37,37 +45,29 @@ class Client(object):
 
     def receive(self, client_socket, context):
         while True:
-            context = client_socket.recv(2048).decode()
-            inst = str(context).split(" > ")[0]
-            if inst == "Suggest" or inst == "Turn":
-                self.answer = False
-                threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
-            elif inst == "game end":
-                self.onTimer = False
-            if inst == "map":
-                self.print_board(json.loads(str(context).split(" > ")[1]).get("board"),
-                                 json.loads(str(context).split(" > ")[1]).get("row"),
-                                 json.loads(str(context).split(" > ")[1]).get("col"))
-            elif inst == "game start0":
-                self.onTimer = True
-                self.answer = False
-                threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
-            elif inst == "game start1":
-                self.answer = True
-            elif inst == "valid":
-                with self.lock:
+            try:
+                context = client_socket.recv(2048).decode()
+                inst = str(context).split(" > ")[0]
+                if inst == "Suggest":
+                    self.answer = False
+                    threading.Thread(target=self.stopwatch, args=(client_socket, 10)).start()
+                elif inst == "gamestart":
                     self.answer = True
-            elif inst == "deny":
-                self.answer = False
-            else:
-                print(str(context))
+                if inst == "map":
+                    self.print_board(json.loads(str(context).split(" > ")[1]).get("board"),
+                                     json.loads(str(context).split(" > ")[1]).get("row"),
+                                     json.loads(str(context).split(" > ")[1]).get("col"))
+                else:
+                    print(str(context))
+            except ConnectionResetError:
+                print("server disconnected")
+                #외부로 서버 죽은걸 던져야 함.
 
     def stopwatch(self, client_socket, limit):
         time.sleep(limit)
         if not self.answer:
             client_socket.send(str("n").encode())
             self.answer = True
-            #i think this function has problem
 
     def print_board(self, board, row, col):
         print("   ", end="")
