@@ -8,8 +8,9 @@ import time
 
 def run_program():
     start_time = time.time()
-    server_name = 'nsl2.cau.ac.kr'
-    localhost = 'localhost'
+    # server_name = 'nsl2.cau.ac.kr'
+    # localhost = 'localhost'
+    server_name = 'localhost'
     server_port = 36561
     client_socket = socket(AF_INET, SOCK_DGRAM)
     client_socket.bind(('', 5432))

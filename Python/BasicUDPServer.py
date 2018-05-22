@@ -14,6 +14,7 @@ print("The server is ready to receive on port", serverPort)
 while True:
     try:
         message, clientAddress = serverSocket.recvfrom(2048)
+        serverSocket.settimeout(5)
         option = message.decode()
     except KeyboardInterrupt:
         print("Bye bye~")
