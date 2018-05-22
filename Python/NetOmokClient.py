@@ -1,7 +1,9 @@
+# 20146561 Yu Jae Beom
 import socket
 import time
 import threading
 import json
+
 
 class Client(object):
     def __init__(self):
@@ -12,40 +14,57 @@ class Client(object):
         self.context = ''
         self.onTimer = False
         self.answer = True
-
+        self.alive = True
+        self.send_thread = None
+        self.receive_thread = None
     lock = threading.Lock()
 
     def start(self):
         try:
-            self.client_socket.connect((self.localhost, self.server_port))
+            self.client_socket.connect((self.server_name, self.server_port))
         except ConnectionRefusedError:
             print("server denied to connect.")
             exit(1)
-        nickname = input(self.client_socket.recv(2048).decode())
         try:
+            nickname = input(self.client_socket.recv(2048).decode())
             self.client_socket.send(nickname.encode())
+            self.receive_thread = threading.Thread(target=self.receive, args=(self.client_socket, self.context))
+            self.receive_thread.start()
 
-            receive_thread = threading.Thread(target=self.receive, args=(self.client_socket, self.context))
-            receive_thread.start()
-
-            send_thread = threading.Thread(target=self.send, args=(self.client_socket, self.context))
-            send_thread.start()
-
-            receive_thread.join()
-            send_thread.join()
+            self.send_thread = threading.Thread(target=self.send, args=(self.client_socket, self.context))
+            self.send_thread.start()
         except ConnectionResetError:
             print("Server disconnected")
-            #1. 서버에게 죽은 거 날리기. 서버는 이를 받고 쓰레드 삭제. 게임 중일 경우 gg.
-            #2. threads 죽이기.
+            self.client_socket.close()
+            self.alive = False
+        except KeyboardInterrupt:
+            print("Bye bye~")
+            self.alive = False
+            self.client_socket.close()
+        except EOFError:
+            return "main thread eof occur"
+            self.client_socket.close()
 
     def send(self, client_socket, context):
-        while True:
-            context = input()
-            client_socket.send(context.encode())
+        while self.alive:
+            try:
+                context = input()
+                if context == "\\quit":
+                    self.alive = False
+                client_socket.send(context.encode())
+            except EOFError:
+                print("Eof Error occur")
+                self.alive = False
+                break
+            except ConnectionResetError:
+                print("Connection Reset Error in send thread")
+                self.alive = False
+                break
+        print("send die")
 
     def receive(self, client_socket, context):
-        while True:
-            try:
+        try:
+            while self.alive:
                 context = client_socket.recv(2048).decode()
                 inst = str(context).split(" > ")[0]
                 if inst == "Suggest":
@@ -59,9 +78,14 @@ class Client(object):
                                      json.loads(str(context).split(" > ")[1]).get("col"))
                 else:
                     print(str(context))
-            except ConnectionResetError:
-                print("server disconnected")
-                #외부로 서버 죽은걸 던져야 함.
+        except ConnectionResetError:
+            print("server disconnected")
+            self.alive = False
+
+        except KeyboardInterrupt:
+            print("Bye bye~")
+            self.alive = False
+        print("receive die")
 
     def stopwatch(self, client_socket, limit):
         time.sleep(limit)
@@ -98,4 +122,5 @@ class Client(object):
 
 
 if __name__ == '__main__':
-    Client().start()
+    socket = Client()
+    socket.start()

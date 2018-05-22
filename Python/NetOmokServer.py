@@ -1,3 +1,4 @@
+# 20146561 Yu Jae Beom
 import socket
 import threading
 from threading import Thread
@@ -13,13 +14,11 @@ class OmokServer(object):
         self.host = host
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((' ', self.port))
-        # get client socket and return nickname
+        self.sock.bind(('', self.port))
         self.clientlist = []
         self.omokPlayer = []
         self.nickname = {}
         self.onOmok = False
-        # check client is on omok game or not
         self.isOmok = {}
         self.omokPending = False
         self.turn = 0
@@ -34,38 +33,60 @@ class OmokServer(object):
             while True:
                 client, address = self.sock.accept()
                 client.settimeout(1000)
-                t: Thread = threading.Thread(target=self.omok_client_socket, args=(client, address))
+                t = threading.Thread(target=self.omok_client_socket, args=(client, address))
+                #self.threadlist[client] = t
                 t.start()
         except KeyboardInterrupt:
             print("Bye bye~")
             exit(1)
 
     def omok_client_socket(self, client, address):
-        while True:
-            client.send(str("Please write your NIckname : ").encode())
-            thread_nickname = client.recv(2048).decode()
-            if thread_nickname in self.nickname.values():
-                print()
-                self.announce("Error", client, thread_nickname + " already exist. Plaese write other nickname\n")
-            else:
-                with self.lock:
-                    self.nickname[client] = thread_nickname
-                    self.clientlist.append(client)
-                    self.isOmok[client] = False
-                print(str(thread_nickname) + " is connected" + str(address))
-                break
-        while True:
-            try:
-                clientinput = client.recv(2048).decode()
-                print(clientinput)
-                self.protocol(client, clientinput)
-            except KeyboardInterrupt:
-                print("Bye bye~")
-                break
-            except ConnectionResetError:
-                print("client disconnect brutally")
-                #1. 죽은 클라이언트의 쓰레드 죽임
-                break
+        try:
+            while True:
+                client.send(str("Please write your NIckname : ").encode())
+                thread_nickname = client.recv(2048).decode()
+                if thread_nickname in self.nickname.values():
+                    print()
+                    self.announce("Error", client, thread_nickname + " already exist. Plaese write other nickname\n")
+                else:
+                    with self.lock:
+                        self.nickname[client] = thread_nickname
+                        self.clientlist.append(client)
+                        self.isOmok[client] = False
+                    print(str(thread_nickname) + " is connected" + str(address))
+                    break
+            while True:
+                try:
+                    clientinput = client.recv(2048).decode()
+                    if clientinput != "":
+                        print(clientinput)
+                        self.protocol(client, clientinput)
+                except KeyboardInterrupt:
+                    print("Bye bye~")
+                    break
+                except ConnectionResetError:
+                    if self.isOmok[client]:
+                        self.announce("game end", self.omokPlayer[(self.omokPlayer.index(client) + 1) % 2], "you win")
+                        for clients in self.clientlist:
+                            self.isOmok[clients] = False
+                        self.omokPlayer = []
+                        self.turn = 0
+                        self.onOmok = False
+                       # self.end_game(client)
+                    print("client disconnect brutally")
+                    del self.nickname[client]
+                    del self.isOmok[client]
+                    self.clientlist[self.clientlist.index(client)].close()
+                    del self.clientlist[self.clientlist.index(client)]
+                    break
+                except KeyboardInterrupt:
+                    break
+        except KeyboardInterrupt:
+            print("Bye bye~")
+        except ConnectionResetError:
+            print("Client disconnect brutally")
+        except IndexError:
+            print("Index Error")
 
     def protocol(self, speaker, input_message):
         split_message = input_message.split()
@@ -86,7 +107,11 @@ class OmokServer(object):
                         else:
                             self.announce("Invalid", speaker, "Invalid position. Please write proper value")
                     else:
-                        self.announce("Turn", speaker, "not your turn")
+                        try:
+                            self.announce("Turn", speaker, "not your turn")
+                        except OSError:
+                            print("os error")
+                        #os error
                 elif inst == "\\gg":
                     self.end_game(speaker)
             elif inst == "\\ss" or inst == "\\gg":
@@ -132,33 +157,37 @@ class OmokServer(object):
 
     def nextTurn(self):
         self.turn += 1
+        print(self.turn)
         for client in self.clientlist:
             self.announce("map", client, json.dumps({"board": self.board, "row": ROW, "col": COL}))
             self.announce("Turn", client, str(self.nickname[self.omokPlayer[self.turn % 2]]) + " now your turn")
 
     def suggestGame(self, listener, speaker):
-        if self.nickname[speaker] != listener:
-            self.announce("Suggest", self.clientlist[list(self.nickname.values()).index(listener)],
-                          self.nickname[speaker] + " wants to play with you. agree? [y/n]")
+        if listener not in self.nickname.values():
+            self.announce("Error", speaker, "There is no " + listener)
+        elif self.nickname[speaker] != listener:
+            for listen_client in self.clientlist:
+                if self.nickname[listen_client] == listener:
+                    self.announce("Suggest", listen_client,
+                                  self.nickname[speaker] + " wants to play with you. agree? [y/n]")
             self.omokPlayer.append(speaker)
             self.omokPending = True
         else:
             self.announce("Error", speaker, "You cannot play omok alone")
 
     def gameStart(self, input_message, speaker):
-        if input_message == "y":
-            self.announce("gamestart", speaker, "")
-            self.onOmok = True
-            self.omokPending = False
-            self.omokPlayer.append(speaker)
-            for player in self.omokPlayer:
-                self.isOmok[player] = True
-            self.board = [[0 for row in range(ROW)] for col in range(COL)]
-            self.print_board(self.board)
-            for client in self.clientlist:
-                self.announce("map", client, json.dumps({"board": self.board, "row": ROW, "col": COL}))
-                self.announce("omok", client,
-                                  "game started. " + self.nickname[self.omokPlayer[self.turn % 2]] + " plays first.")
+        self.announce("gamestart", speaker, "")
+        self.onOmok = True
+        self.omokPending = False
+        self.omokPlayer.append(speaker)
+        for player in self.omokPlayer:
+            self.isOmok[player] = True
+        self.board = [[0 for row in range(ROW)] for col in range(COL)]
+        self.print_board(self.board)
+        for client in self.clientlist:
+            self.announce("map", client, json.dumps({"board": self.board, "row": ROW, "col": COL}))
+            self.announce("omok", client,
+                          "game started. " + self.nickname[self.omokPlayer[self.turn % 2]] + " plays first.")
 
     def gameDeny(self, speaker):
         self.omokPending = False
@@ -172,7 +201,6 @@ class OmokServer(object):
                           str(self.nickname[self.omokPlayer[self.turn % 2]]) + " times up.")
         self.turn += 1
         self.announce("Turn", self.omokPlayer[self.turn % 2], "now your turn")
-
 
     def broadcast(self, speaker, input_message):
         for client in self.clientlist:
