@@ -4,7 +4,7 @@ import socket
 import threading
 from datetime import datetime
 
-serverPort = 36561
+serverPort = 26561
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 serverSocket.bind(('', serverPort))
 # serverSocket.settimeout(5)
@@ -13,7 +13,7 @@ serverSocket.bind(('', serverPort))
 def send():
     while True:
         message = input("input: ")
-        serverSocket.sendto(message.encode(), ('localhost', 26561))
+        serverSocket.sendto(message.encode(), ('localhost', 36561))
 
 
 def receive():
@@ -27,6 +27,7 @@ def receive():
 
 
 print("The server is ready to receive on port", serverPort)
+serverSocket.sendto(str("hi ukio").encode(), ('localhost', 36561))
 sthread = threading.Thread(target=send)
 rthread = threading.Thread(target=receive)
 sthread.start()
