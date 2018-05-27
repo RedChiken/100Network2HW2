@@ -28,6 +28,7 @@ class P2PChat(object):
         self.sock.setblocking(False)
         self.sock.settimeout(5)
         self.receive_thread = None
+        self.send_thread = None
         # find peer's nickname by user number
         self.peer_nickname_list = {}
         # get directly connected peer number
@@ -52,11 +53,16 @@ class P2PChat(object):
 
     def run(self):
         self.receive_thread = threading.Thread(target=self.receive)
+        self.send_thread = threading.Thread(target=self.send)
         self.receive_thread.daemon = True
+        self.send_thread.daemon = True
+        self.send_thread.start()
         self.receive_thread.start()
+        self.send_thread.join()
         self.receive_thread.join()
         print(str(self.nodeID) + " " + str(peer_list[str(self.nickname)]) + " connected")
 
+    def send(self):
         # TODO: send connection REQUEST to all exist nodes
         for key in peer_list.keys():
             self.sock.sendto(json.dumps(
@@ -96,8 +102,8 @@ class P2PChat(object):
                     # TODO: broadcast message to all directly connected nodes
                     self.broadcast("message", self.nodeID, message)
             except socket.timeout:
+                print("send timeout")
                 time.sleep(1)
-                print("input")
 
     def receive(self):
         while True:
@@ -191,7 +197,8 @@ class P2PChat(object):
                         # TODO: print data and transport it to all connected nodes
                         print(self.peer_nickname_list[data_obj['src']] + "> " + data_obj['message'])
             except socket.timeout:
-                time.sleep(1)
+                print("receive times up")
+                # time.sleep(1)
             # TODO: insert message to queue
             # message, clientAddress = self.sock.recvfrom(2048)
             # print("mesasge : " + str(message))
