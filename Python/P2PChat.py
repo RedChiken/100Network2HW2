@@ -26,9 +26,10 @@ class P2PChat(object):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', peer_list[str(node_id)]))
         self.sock.setblocking(False)
-        self.sock.settimeout(5)
+        self.sock.settimeout(60)
         self.receive_thread = None
         self.send_thread = None
+        self.communicate_thread = None
         # find peer's nickname by user number
         self.peer_nickname_list = {}
         # get directly connected peer number
@@ -43,6 +44,7 @@ class P2PChat(object):
         self.incoming_pending_state = [False, False, False, False]
         self.size_of_outgoing = 0
         self.ack = 0
+        self.message_queue = queue.Queue(9)
 
     # TODO: message form
     # type : state of message
@@ -52,26 +54,41 @@ class P2PChat(object):
     # message : raw message(or addr dictionary)
 
     def run(self):
-        self.receive_thread = threading.Thread(target=self.receive)
-        self.send_thread = threading.Thread(target=self.send)
-        self.receive_thread.daemon = True
-        self.send_thread.daemon = True
-        self.send_thread.start()
-        self.receive_thread.start()
-        self.send_thread.join()
-        self.receive_thread.join()
+        # self.receive_thread = threading.Thread(target=self.receive)
+        # self.send_thread = threading.Thread(target=self.send)
+        # self.receive_thread.daemon = True
+        # self.send_thread.daemon = True
+        # self.receive_thread.start()
+        # self.send_thread.start()
+        # self.send_thread.join()
+        # self.receive_thread.join()
+        self.communicate_thread = threading.Thread(target=self.communicate)
+        self.communicate_thread.daemon = True
+        self.communicate_thread.start()
+        self.communicate_thread.join()
         print(str(self.nodeID) + " " + str(peer_list[str(self.nickname)]) + " connected")
+        while True:
+            message = input()
+            self.message_queue.put(message)
 
-    def send(self):
+    def communicate(self):
         # TODO: send connection REQUEST to all exist nodes
         for key in peer_list.keys():
-            self.sock.sendto(json.dumps(
-                self.serialize("connection REQUEST", self.nodeID, key, self.nickname)).encode(),
-                             (peer_name, peer_list[key]))
+            if key != str(self.nodeID):
+                self.sock.sendto(json.dumps(
+                    self.serialize("connection REQUEST", str(self.nodeID), key, self.nickname)).encode(),
+                                 (peer_name, peer_list[key]))
         while True:
+            print("input stdio")
+            self.receive()
+            self.send()
+
+    def send(self):
+        # while True:
+        if not self.message_queue.empty():
             print("input")
             try:
-                message = input()
+                message = self.message_queue.get()
                 if message[0] == "\\":
                     inst = message.split('\\')[1]
                     if inst == 'connection':
@@ -100,104 +117,106 @@ class P2PChat(object):
                         print()
                 else:
                     # TODO: broadcast message to all directly connected nodes
-                    self.broadcast("message", self.nodeID, message)
+                    self.broadcast("message", str(self.nodeID), message)
             except socket.timeout:
                 print("send timeout")
                 time.sleep(1)
 
     def receive(self):
-        while True:
-            print("get")
-            try:
-                raw_data, client_address = self.sock.recvfrom(1048576)
-                data_obj = json.loads(raw_data.decode())
-                print(data_obj)
-                # TODO: if message already exist in queue, expire
-                # TODO: check message by src and ACK number
-                if (data_obj['dst'] in self.message_cache.queue) or (data_obj['dst'] == str(self.nodeID)):
-                    self.transport(data_obj, data_obj['dst'])
-                else:
-                    state = data_obj['type']
-                    if state == "connection REQUEST":
-                        # TODO: if condition, response ACK and delete incoming pending state on.
-                        # TODO: else, response FAIL
-                        if (self.size_of_incoming < 2) and (self.size_of_incoming + self.size_of_outgoing < 3):
-                            print("set pending and wait")
-                            self.unicast("connection ACK", self.nodeID, data_obj['src'], self.nickname)
-                            self.incoming_pending_state[data_obj['src']] = True
-                        else:
-                            print("not allowed")
-                            self.unicast("connection FAIL", data_obj['dst'], data_obj['src'], "")
-                        self.peer_nickname_list[data_obj['src']] = data_obj['message']
-                    elif state == "connection ACK":
-                        # self.sock.settimeout(0)
-                        # TODO: if condition A and B, add outgoing nodes and response ACK.
-                        # TODO: if condition A and not B, add incoming nodes and pending state off.
-                        # TODO: if not A, response FAIL
-                        # condition A : outgoing nodes < 3 and all nodes < 4
-                        # condition B : pending state off
-                        if (self.size_of_outgoing < 2) and (self.size_of_outgoing + self.size_of_incoming < 3):
-                            if self.incoming_pending_state:
-                                print("incomming node connected")
-                                self.peer_nickname_list[data_obj['src']] = data_obj['message']
-                                self.connected_peer.append(data_obj['src'])
-                                self.incoming_pending_state[data_obj['src']] = False
-                                self.size_of_incoming += 1
-                            else:
-                                print("outgoing node connected")
-                                self.peer_nickname_list[data_obj['src']] = data_obj['message']
-                                self.connected_peer.append(data_obj['src'])
-                                self.unicast("connection ACK", self.nodeID, data_obj['src'], self.nickname)
-                                self.size_of_outgoing += 1
-                        else:
-                            print("not connected")
-                            self.unicast("connection FAIL", self.nodeID, data_obj["src"], self.nickname)
-                    elif state == "connection FAIL":
-                        # self.sock.settimeout(0)
-                        print("denied")
-                        # TODO: if incoming nodes pending, state off.
-                        self.incoming_pending_state[data_obj['src']] = False
-                    elif state == "whisper":
-                        # TODO: if dst is me, print it.
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
-                    elif state == "getaddr":
-                        # TODO: if dst is me, response my directly connected peer list with "getaddr_response"
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
-                    elif state == "getaddr_response":
-                        # TODO: if dst is me, insert data to addr_queue
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        # TODO: if size of queue is three, print it all and clear.
-                        print()
-                    elif state == "addr":
-                        # TODO: if dst is me, response my directly connected peer list with "addr_response"
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
-                    elif state == "addr_response":
-                        # TODO: if dst is me, print it
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
-                    elif state == "ping":
-                        # TODO: if dst is me, send "pong" state to src.
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
-                    elif state == "pong":
-                        # TODO: if dst is me, print time.time() - rtt_start
-                        # TODO: else if dst is directly connected, transport to it.
-                        # TODO: else, broadcast except src
-                        print()
+        # while True:
+        print("get")
+        try:
+            raw_data, client_address = self.sock.recvfrom(1048576)
+            data_obj = json.loads(raw_data.decode())
+            print(data_obj)
+            # TODO: if message already exist in queue, expire
+            # TODO: check message by src and ACK number
+            if (data_obj['dst'] in self.message_cache.queue) or (data_obj['dst'] != str(self.nodeID)):
+                self.transport(data_obj, data_obj['dst'])
+            else:
+                state = data_obj['type']
+                if state == "connection REQUEST":
+                    # TODO: if condition, response ACK and delete incoming pending state on.
+                    # TODO: else, response FAIL
+                    if (self.size_of_incoming < 2) and (self.size_of_incoming + self.size_of_outgoing < 3):
+                        print("set pending and wait")
+                        self.unicast("connection ACK", str(self.nodeID), data_obj['src'], self.nickname)
+                        self.incoming_pending_state[int(data_obj['src'])] = True
                     else:
-                        # TODO: print data and transport it to all connected nodes
-                        print(self.peer_nickname_list[data_obj['src']] + "> " + data_obj['message'])
-            except socket.timeout:
-                print("receive times up")
+                        print("not allowed")
+                        self.unicast("connection FAIL", data_obj['dst'], data_obj['src'], "")
+                    self.peer_nickname_list[data_obj['src']] = data_obj['message']
+                elif state == "connection ACK":
+                    # self.sock.settimeout(0)
+                    # TODO: if condition A and B, add outgoing nodes and response ACK.
+                    # TODO: if condition A and not B, add incoming nodes and pending state off.
+                    # TODO: if not A, response FAIL
+                    # condition A : outgoing nodes < 3 and all nodes < 4
+                    # condition B : pending state off
+                    if (self.size_of_outgoing < 2) and (self.size_of_outgoing + self.size_of_incoming < 3):
+                        if self.incoming_pending_state[int(data_obj['src'])]:
+                            print("incomming node connected")
+                            self.peer_nickname_list[data_obj['src']] = data_obj['message']
+                            self.connected_peer.append(data_obj['src'])
+                            self.incoming_pending_state[int(data_obj['src'])] = False
+                            self.size_of_incoming += 1
+                        else:
+                            print("outgoing node connected")
+                            self.peer_nickname_list[data_obj['src']] = data_obj['message']
+                            self.connected_peer.append(data_obj['src'])
+                            self.unicast("connection ACK", str(self.nodeID), data_obj['src'], self.nickname)
+                            self.size_of_outgoing += 1
+                    else:
+                        print("not connected")
+                        self.unicast("connection FAIL", str(self.nodeID), data_obj["src"], self.nickname)
+                elif state == "connection FAIL":
+                    # self.sock.settimeout(0)
+                    print("denied")
+                    # TODO: if incoming nodes pending, state off.
+                    self.incoming_pending_state[data_obj['src']] = False
+                elif state == "whisper":
+                    # TODO: if dst is me, print it.
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                elif state == "getaddr":
+                    # TODO: if dst is me, response my directly connected peer list with "getaddr_response"
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                elif state == "getaddr_response":
+                    # TODO: if dst is me, insert data to addr_queue
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    # TODO: if size of queue is three, print it all and clear.
+                    print()
+                elif state == "addr":
+                    # TODO: if dst is me, response my directly connected peer list with "addr_response"
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                elif state == "addr_response":
+                    # TODO: if dst is me, print it
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                elif state == "ping":
+                    # TODO: if dst is me, send "pong" state to src.
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                elif state == "pong":
+                    # TODO: if dst is me, print time.time() - rtt_start
+                    # TODO: else if dst is directly connected, transport to it.
+                    # TODO: else, broadcast except src
+                    print()
+                else:
+                    # TODO: print data and transport it to all connected nodes
+                    print(self.peer_nickname_list[data_obj['src']] + "> " + data_obj['message'])
+        except socket.timeout:
+            print("receive times up")
+        except ConnectionResetError:
+            print("connection reset error")
                 # time.sleep(1)
             # TODO: insert message to queue
             # message, clientAddress = self.sock.recvfrom(2048)
