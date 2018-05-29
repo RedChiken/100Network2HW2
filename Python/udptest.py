@@ -22,16 +22,21 @@ class P2P(object):
         # self.receive_thread = threading.Thread(args=self.receive)
         # self.receive_thread.start()
         # self.receive_thread.join()
+        self.sock.sendto("hello world".encode(), ('localhost', peer_list[1]))
+        message = None
         while True:
-            message = input("input: ")
-            self.sock.sendto(message.encode(), ('localhost', peer_list[1]))
             try:
                 message, clientAddress = self.sock.recvfrom(16000)
             except ConnectionResetError:
                 print("ConnectionResetError")
             except BlockingIOError:
                 print("BlockingIOError")
-            print(message.decode())
+            try:
+                print(message.decode())
+            except AttributeError:
+                print("attribute error")
+            message = input("input: ")
+            self.sock.sendto(message.encode(), ('localhost', peer_list[1]))
 
 
 if __name__ == "__main__":
