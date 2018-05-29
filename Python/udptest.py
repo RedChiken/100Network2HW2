@@ -1,44 +1,42 @@
-#20146561 유재범
-
 import socket
 import threading
-import time
-import sys
-from datetime import datetime
 
-serverPort = 36561
-serverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-serverSocket.bind(('', serverPort))
-# serverSocket.settimeout(5)
-
-
-def send():
-    serverSocket.sendto(str("hi ukio").encode(), ('localhost', 26561))
-    while True:
-        message = input("input: ")
-        serverSocket.sendto(message.encode(), ('localhost', 26561))
+peer_list = {
+    1: 26561,
+    2: 36561,
+    3: 46561,
+    4: 56561
+}
 
 
-def receive():
-    message = b''
-    clientAddress = None
-    while True:
-        try:
-            message, clientAddress = serverSocket.recvfrom(2048)
-        except ConnectionResetError:
-            print("ukio is not here")
-            pass
-        print('Connection requested from', clientAddress)
-        print(message.decode())
-        # TODO : input 한번 씹힘.
+class P2P(object):
+    def __init__(self, node_id):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((' ', peer_list[node_id]))
+        # self.sock.setblocking(0)
+        # self.sock.settimeout(0)
+        self.receive_thread = None
+        self.node_id = id
+
+    def send(self):
+        self.receive_thread = threading.Thread(args=self.receive)
+        self.receive_thread.start()
+        self.receive_thread.join()
+        while True:
+            message = input()
+            self.sock.sendto(message.encode(), ('localhost', peer_list[1]))
+
+    def receive(self):
+        while True:
+            try:
+                message, clientAddress = self.sock.recvfrom(16000)
+                print(message.decode())
+            except ConnectionResetError:
+                print("ConnectionResetError")
+            except BlockingIOError:
+                print("BlockingIOError")
 
 
-
-print("The server is ready to receive on port", serverPort)
-sthread = threading.Thread(target=send)
-rthread = threading.Thread(target=receive)
-rthread.start()
-sthread.start()
-sthread.join()
-rthread.join()
+if __name__ == "__main__":
+    P2P(2).send()
 
