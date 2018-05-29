@@ -23,6 +23,8 @@ class P2P(object):
         # self.receive_thread.start()
         # self.receive_thread.join()
         self.sock.sendto("hello world".encode(), ('localhost', peer_list[1]))
+        self.sock.sendto("hello world".encode(), ('localhost', peer_list[3]))
+        self.sock.sendto("hello world".encode(), ('localhost', peer_list[4]))
         message = None
         while True:
             try:
